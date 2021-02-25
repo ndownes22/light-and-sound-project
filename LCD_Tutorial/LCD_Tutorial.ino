@@ -1,5 +1,5 @@
 /*****************************************
- * Tutorial from www.sunfounder.com
+ * Tutorial from http://wiki.sunfounder.cc/index.php?title=I2C_LCD2004
  * Name: I2C LCD2004
  * Connections:
  * ---- LCD -----
