@@ -49,7 +49,7 @@ LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars
 #define PIN_ANALOG_IN A0
 
 RTC_DS3231 rtc;
-//char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+uint8_t currentDay;
 
 Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // pass in a number for the sensor identifier (for your use later)
 
@@ -122,10 +122,18 @@ void configureSensor(void)
   Serial.println(F(""));
 }
 
+void createFile(DateTime rightNow)
+{
+   myFile = SD.open(String(rightNow.day()) + "_" + String(rightNow.month()) + "_" + String(rightNow.year()) +".csv", FILE_WRITE);
+}
 
 void setup()
 {
   Serial.begin(9600);  
+
+  currentDay = rtc.now().dayOfTheWeek();
+  createFile(rtc.now());
+
 
   // --------------- Set up the Lux Sensor ------------------
   Serial.println(F("Starting Adafruit TSL2591 Test!"));
@@ -288,7 +296,15 @@ void loop()
 
 //  save_values(lux, soundLevel);
 
-  myFile = SD.open("values.csv", FILE_WRITE);
+  // Create a new file if the day has changed
+  if(currentDay != rightNow.dayOfTheWeek())
+  {
+    myFile.close();
+    currentDay = rightNow.dayOfTheWeek();
+    createFile(rightNow);
+  }
+
+  // Save values to file
   myFile.print(rightNow.hour(), DEC);
   myFile.print(':');
   myFile.print(rightNow.minute(), DEC);
@@ -298,7 +314,8 @@ void loop()
   myFile.print(lux); 
   myFile.print(","); 
   myFile.println(soundLevel); 
-  myFile.close();
+
+ 
   
   delay(500); //half a second
 
