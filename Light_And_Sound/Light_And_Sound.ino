@@ -73,7 +73,6 @@ File myFile;
 //  myFile.close();
 //}
 //void soundISR()
-//{
 //  int pin_val;
 //
 //  pin_val = digitalRead(PIN_GATE_IN);
@@ -267,6 +266,7 @@ void loop()
   Serial.print(F("Lux: ")); Serial.println(tsl.calculateLux(full, ir), 6);
   int lux = tsl.calculateLux(full, ir);
 
+//{
 //  advancedRead();
 //  delay(500);
   
