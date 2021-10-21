@@ -52,20 +52,19 @@ Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // Lux sensor identifier
 File myFile;
 
 /*********************************************************/
-//void save_values(int light, int sound) {
-//  DateTime rightNow = rtc.now();
-//  myFile = SD.open("values.csv", FILE_WRITE);
-//  myFile.print(rightNow.hour(), DEC);
-//  myFile.print(':');
-//  myFile.print(rightNow.minute(), DEC);
-//  myFile.print(':');
-//  myFile.print(rightNow.second(), DEC);
-//  myFile.print(",");
-//  myFile.print(light); 
-//  myFile.print(","); 
-//  myFile.println(sound); 
-//  myFile.close();
-//}
+void save_values(DateTime rightNow, int lux, int soundLevel) {
+  myFile = SD.open("values.csv", FILE_WRITE);
+  myFile.print(rightNow.hour(), DEC);
+  myFile.print(':');
+  myFile.print(rightNow.minute(), DEC);
+  myFile.print(':');
+  myFile.print(rightNow.second(), DEC);
+  myFile.print(",");
+  myFile.print(lux); 
+  myFile.print(","); 
+  myFile.println(soundLevel); 
+  myFile.close();
+}
 
 /***************** Configure Lux Sensor **************************/
 void configureSensor(void)
@@ -119,6 +118,7 @@ void printError(String error) {
 void setup()
 {
   Serial.begin(9600);  
+  
   // --------------- Set up the Lux Sensor ------------------
   if (!tsl.begin()) 
     printError("Lux Sensor");
@@ -203,28 +203,17 @@ void loop()
   lcd.print(soundLevel); 
 
 
-//  save_values(lux, soundLevel);
-  myFile.print(rightNow.hour(), DEC);
-  myFile.print(':');
-  myFile.print(rightNow.minute(), DEC);
-  myFile.print(':');
-  myFile.print(rightNow.second(), DEC);
-  myFile.print(",");
-  myFile.print(lux); 
-  myFile.print(","); 
-  myFile.println(soundLevel); 
-  myFile.close();
+save_values(rightNow, lux, soundLevel);
+  
 
   
   // Print to serial monitor (for debugging)
-  Serial.print("Status: ");
-  Serial.println(soundLevel);
+  Serial.print("Sound Level: ");
+  Serial.print(soundLevel);
+  Serial.print("    Lux Level: ");
+  Serial.println(lux);
   
-  delay(500); //half a second
-
-//  Serial.println("END");
-//    lcd.setCursor ( 0, 3 );            // go to the fourth row
-//  lcd.print(" DONE ");
+  delay(300); //half a second
   
 }
 /************************************************************/
