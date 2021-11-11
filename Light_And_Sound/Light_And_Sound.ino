@@ -50,6 +50,7 @@ LiquidCrystal_I2C lcd(0x27,20,4); // set the LCD address to 0x27 for a 16 chars 
 RTC_DS3231 rtc;
 Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // Lux sensor identifier
 File myFile;
+String error = "";
 
 /*********************************************************/
 void save_values(DateTime rightNow, int lux, int soundLevel) {
@@ -109,10 +110,10 @@ void configureSensor(void)
   Serial.println(F(""));
 }
 
-void printError(String error) {
+void printError() {
   // We will reserve the fourth row of the LCD for any errors
   lcd.setCursor(0,3);
-  lcd.print("Error: " + error);
+  lcd.print(error.substring(0,20));
 }
 
 void setup()
@@ -121,7 +122,7 @@ void setup()
   
   // --------------- Set up the Lux Sensor ------------------
   if (!tsl.begin()) 
-    printError("Lux Sensor");
+    error = error + "Lux Sensor";
   configureSensor();
   //--------------------------------------------------
 
@@ -139,7 +140,7 @@ void setup()
 
   // --------------- Set up the RTC ------------------
   if (!rtc.begin())
-    printError("Couldn't find RTC");
+    error = error + "Couldn't find RTC";
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   //  if (rtc.lostPower()) {
   //    Serial.println("RTC lost power, lets set the time!");
@@ -151,10 +152,10 @@ void setup()
   
 /***************** Configure MicroSD Card **************************/
   if (!SD.begin(10)) // This begins use of the SPI bus. Parameter is CS pin 10
-    printError("SD Card Initialization Failed!"); 
+    error = error + "SD Card Initialization Failed!"; 
   myFile = SD.open("values.txt", FILE_WRITE);
   if (!myFile)
-    printError("SD Card Open");
+    error = error + "SD Card Open";
 /******************************************************************/
 
 }
@@ -202,9 +203,9 @@ void loop()
   lcd.print("Sound Level: ");
   lcd.print(soundLevel); 
 
+  printError();
 
-save_values(rightNow, lux, soundLevel);
-  
+  save_values(rightNow, lux, soundLevel);
 
   
   // Print to serial monitor (for debugging)
@@ -213,7 +214,7 @@ save_values(rightNow, lux, soundLevel);
   Serial.print("    Lux Level: ");
   Serial.println(lux);
   
-  delay(300); //half a second
+  delay(300);
   
 }
 /************************************************************/
