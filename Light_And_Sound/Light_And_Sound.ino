@@ -52,6 +52,7 @@ Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // Lux sensor identifier
 File myFile;
 String error = "";
 int index = 0;
+uint8_t currentDay;
 
 /*********************************************************/
 void save_values(DateTime rightNow, int lux, int soundLevel) {
@@ -127,6 +128,12 @@ void printError() {
   }
 }
 
+void createFile(DateTime rightNow)
+{
+  String temp = String(rightNow.month()) + "_" + String(rightNow.day()) + ".csv"; // There seems to be a limit to the file name length
+  myFile = SD.open(temp, FILE_WRITE);
+}
+
 void setup()
 {
   Serial.begin(9600);  
@@ -153,6 +160,8 @@ void setup()
   if (!rtc.begin())
     error = error + "Couldn't find RTC ";
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  //rtc.adjust(DateTime(2021, 11, 18, 23, 59, 0)); //testing day change
+  currentDay = rtc.now().dayOfTheWeek();
   //  if (rtc.lostPower()) {
   //    Serial.println("RTC lost power, lets set the time!");
   //    // Following line sets the RTC to the date & time this sketch was compiled
@@ -164,9 +173,9 @@ void setup()
 /***************** Configure MicroSD Card **************************/
   if (!SD.begin(10)) // This begins use of the SPI bus. Parameter is CS pin 10
     error = error + "SD Card Initialization Failed! "; 
-  myFile = SD.open("values.csv", FILE_WRITE);
+  createFile(rtc.now());
   if (!myFile)
-    error = error + "SD Card Open ";
+    error = error + "SD Card Could Not Open ";
 /******************************************************************/
 
 }
@@ -178,10 +187,6 @@ void loop()
   String month_ = String(rightNow.month());
   String day_ = String(rightNow.day());
   String date = year_ + "_" + month_ + "_" + day_;
-
-//  bool save = false;
-  DateTime one_day (rightNow + TimeSpan(1,0,0,0)); //1 day 0 hr 0 min 0sec
-//  save = rtc.setAlarm1(one_day, DS3231_A1_Day);
 
 // Sound sensor
   int soundLevel;
@@ -216,6 +221,16 @@ void loop()
 
   printError();
 
+
+  
+   // Create a new file if the day has changed
+  if(currentDay != rightNow.dayOfTheWeek())
+  {
+    myFile.close();
+    currentDay = rightNow.dayOfTheWeek();
+    createFile(rightNow);
+  }
+
   save_values(rightNow, lux, soundLevel);
 
   
@@ -224,6 +239,7 @@ void loop()
   Serial.print(soundLevel);
   Serial.print("    Lux Level: ");
   Serial.println(lux);
+  Serial.println(String(rightNow.day()) + "_" + String(rightNow.month()) + "_" + String(rightNow.year()) +".csv");
   
   //delay(300);
   
