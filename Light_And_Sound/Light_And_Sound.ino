@@ -175,7 +175,7 @@ void setup()
     error = error + "SD Card Initialization Failed! "; 
   createFile(rtc.now());
   if (!myFile)
-    error = error + "SD Card Could Not Open ";
+    error = error + "Could Not Open File ";
 /******************************************************************/
 
 }
