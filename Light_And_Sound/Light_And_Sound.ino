@@ -130,7 +130,13 @@ void BacklightISR() {
 }
 
 
-void PatientSelect(){patientIndex = (patientIndex + 1) % sizeof(patientArray);}
+void PatientSelect(){
+  if (patientIndex == sizeof(patientArray)/sizeof(patientArray[0])){
+    patientIndex = 0;
+    return;
+  }
+  patientIndex = (patientIndex + 1) % (sizeof(patientArray)/sizeof(patientArray[0]) + 1);
+}
 
 
 void setup()
@@ -241,17 +247,20 @@ save_values(rightNow, lux, soundLevel);
     lcd.backlight();
   }
   
-  // Print to serial monitor (for debugging)
+  /* Print to serial monitor (for debugging)
   Serial.print("Sound Level: ");
   Serial.print(soundLevel);
   Serial.print("    Lux Level: ");
   Serial.println(lux);
-
+  */
   for (unsigned int i = 0; i < 20; i++){
     // delayMicroseconds is needed for interrupts
     delayMicroseconds(15000); // delays 15ms 20 times = 300ms
   }
-  
+
+  String testArray[3] = patientArray;
+
+  Serial.println(testArray[patientIndex]);
   //delay(300); //half a second
   
 }
