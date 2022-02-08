@@ -51,6 +51,10 @@ RTC_DS3231 rtc;
 Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // Lux sensor identifier
 File myFile;
 
+volatile byte lcd_toggle = 0; // Used in Backlight_ISR to toggle the LCD backlight
+volatile int patientIndex = 0; // Used in PatientSelect ISR to index the circular patient array
+volatile String patientArray[3] = {"Patient1", "Patient2", "Patient3"}; // circular array used to select patients
+
 /*********************************************************/
 void save_values(DateTime rightNow, int lux, int soundLevel) {
   myFile = SD.open("values.csv", FILE_WRITE);
@@ -115,6 +119,20 @@ void printError(String error) {
   lcd.print("Error: " + error);
 }
 
+
+void BacklightISR() {
+  if (lcd_toggle == 1){
+    lcd_toggle = 0;
+  }
+  else if (lcd_toggle == 0){
+    lcd_toggle = 1;
+  }
+}
+
+
+void PatientSelect(){patientIndex = (patientIndex + 1) % sizeof(patientArray);}
+
+
 void setup()
 {
   Serial.begin(9600);  
@@ -157,7 +175,16 @@ void setup()
     printError("SD Card Open");
 /******************************************************************/
 
+
+  // -------- Set up the Buttons/Interrupts ----------
+  pinMode(2, INPUT);  // using digital pin 2 as the backlight switch
+  pinMode(3, INPUT);  // using digital pin 3 as the patient select
+  attachInterrupt(digitalPinToInterrupt(2), BacklightISR, RISING);
+  attachInterrupt(digitalPinToInterrupt(3), PatientSelect, RISING);
+  //--------------------------------------------------
+  
 }
+
 
 void loop() 
 {
@@ -196,7 +223,7 @@ void loop()
   lcd.setCursor (0,1);
   lcd.print("Light Level: ");
   lcd.print(lux);
-  lcd.print(" Lux"); 
+  lcd.print(" Lux");
   
   lcd.setCursor (0,2);
   lcd.print("Sound Level: ");
@@ -204,16 +231,28 @@ void loop()
 
 
 save_values(rightNow, lux, soundLevel);
-  
 
+  // turns the backlight off at 7PM and back on at 7AM
+  // will be turned off/on regardless of the button press for the backlight
+  if(String(rightNow.hour()) == "19" && String(rightNow.minute()) == "00" || lcd_toggle == 1){
+    lcd.noBacklight();
+  }
+  if(String(rightNow.hour()) == "07" && String(rightNow.minute()) == "00" || lcd_toggle == 0){
+    lcd.backlight();
+  }
   
   // Print to serial monitor (for debugging)
   Serial.print("Sound Level: ");
   Serial.print(soundLevel);
   Serial.print("    Lux Level: ");
   Serial.println(lux);
+
+  for (unsigned int i = 0; i < 20; i++){
+    // delayMicroseconds is needed for interrupts
+    delayMicroseconds(15000); // delays 15ms 20 times = 300ms
+  }
   
-  delay(300); //half a second
+  //delay(300); //half a second
   
 }
 /************************************************************/
