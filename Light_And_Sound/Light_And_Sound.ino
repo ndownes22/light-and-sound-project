@@ -54,6 +54,10 @@ String error = "";
 int index = 0;
 uint8_t currentDay;
 
+volatile byte lcd_toggle = 0; // Used in Backlight_ISR to toggle the LCD backlight
+volatile int patientIndex = 0; // Used in PatientSelect ISR to index the circular patient array
+volatile String patientArray[3] = {"Patient1", "Patient2", "Patient3"}; // circular array used to select patients
+
 /*********************************************************/
 void save_values(DateTime rightNow, int lux, int soundLevel) {
   //myFile = SD.open("patient_1/values.csv", FILE_WRITE);
@@ -128,9 +132,27 @@ void printError() {
   }
 }
 
+void BacklightISR() {
+  if (lcd_toggle == 1){
+    lcd_toggle = 0;
+  }
+  else if (lcd_toggle == 0){
+    lcd_toggle = 1;
+  }
+}
+
+void PatientSelect(){
+  patientIndex = (patientIndex+1) % 3;
+//  if (patientIndex == sizeof(patientArray)/sizeof(patientArray[0])){
+//    patientIndex = 0;
+//    return;
+//  }
+//  patientIndex = (patientIndex + 1) % (sizeof(patientArray)/sizeof(patientArray[0]) + 1);
+}
+
 void createFile(DateTime rightNow)
 {
-  String temp = String(rightNow.month()) + "_" + String(rightNow.day()) + ".csv"; // There seems to be a limit to the file name length
+  String temp = "Patient" + String(patientIndex+1) + "/" + String(rightNow.month()) + "_" + String(rightNow.day()) + ".csv"; // There seems to be a limit to the file name length
   myFile = SD.open(temp, FILE_WRITE);
 }
 
@@ -178,6 +200,12 @@ void setup()
     error = error + "Could Not Open File ";
 /******************************************************************/
 
+  // -------- Set up the Buttons/Interrupts ----------
+  pinMode(2, INPUT);  // using digital pin 2 as the backlight switch
+  pinMode(3, INPUT);  // using digital pin 3 as the patient select
+  attachInterrupt(digitalPinToInterrupt(2), BacklightISR, RISING);
+  attachInterrupt(digitalPinToInterrupt(3), PatientSelect, RISING);
+  //--------------------------------------------------
 }
 
 void loop() 
@@ -203,12 +231,9 @@ void loop()
   // Print to LCD screen
   lcd.clear();
   lcd.setCursor(0,0);   // Go to the top left corner
-  lcd.print("Date: ");  // Write this string on the top row
-  lcd.print(rightNow.month(), DEC);
-  lcd.print('/');
-  lcd.print(rightNow.day(), DEC);
-  lcd.print('/');
-  lcd.print(rightNow.year(), DEC);
+  lcd.print("Patient: ");
+  lcd.print(patientIndex+1); 
+
       
   lcd.setCursor (0,1);
   lcd.print("Light Level: ");
@@ -220,8 +245,6 @@ void loop()
   lcd.print(soundLevel); 
 
   printError();
-
-
   
    // Create a new file if the day has changed
   if(currentDay != rightNow.dayOfTheWeek())
@@ -233,6 +256,20 @@ void loop()
 
   save_values(rightNow, lux, soundLevel);
 
+  // turns the backlight off at 7PM and back on at 7AM
+  // will be turned off/on regardless of the button press for the backlight
+  if(String(rightNow.hour()) == "19" && String(rightNow.minute()) == "00" || lcd_toggle == 1){
+    lcd.noBacklight();
+  }
+  if(String(rightNow.hour()) == "07" && String(rightNow.minute()) == "00" || lcd_toggle == 0){
+    lcd.backlight();
+  }
+
+  for (unsigned int i = 0; i < 20; i++){
+    // delayMicroseconds is needed for interrupts
+    delayMicroseconds(15000); // delays 15ms 20 times = 300ms
+  }
+
   
   // Print to serial monitor (for debugging)
   Serial.print("Sound Level: ");
@@ -240,8 +277,5 @@ void loop()
   Serial.print("    Lux Level: ");
   Serial.println(lux);
   Serial.println(String(rightNow.day()) + "_" + String(rightNow.month()) + "_" + String(rightNow.year()) +".csv");
-  
-  //delay(300);
-  
 }
 /************************************************************/
