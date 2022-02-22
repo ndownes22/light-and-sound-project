@@ -135,8 +135,7 @@ void printError() {
 }
 
 void BacklightISR() {
-  if(millis() - lastLightInterrupt > 50){    
-
+  if(millis() - lastLightInterrupt > 75){
     if (lcd_toggle == 1){
       lcd_toggle = 0;
     }
@@ -149,13 +148,16 @@ void BacklightISR() {
 }
 
 void PatientSelect(){
-  if(millis() - lastInterrupt > 50){    
+  if(millis() - lastInterrupt > 75){    
 
     patientIndex = (patientIndex+1) % 3;
 
     lastInterrupt = millis();
 
     }
+
+    for (unsigned int i = 0; i < 20; i++)
+      delayMicroseconds(15000);
   
   //patientIndex = (patientIndex+1) % 3;
 }
@@ -213,8 +215,8 @@ void setup()
   // -------- Set up the Buttons/Interrupts ----------
   pinMode(2, INPUT);  // using digital pin 2 as the backlight switch
   pinMode(3, INPUT);  // using digital pin 3 as the patient select
-  attachInterrupt(digitalPinToInterrupt(2), BacklightISR, RISING);
-  attachInterrupt(digitalPinToInterrupt(3), PatientSelect, RISING);
+  attachInterrupt(digitalPinToInterrupt(2), BacklightISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(3), PatientSelect, FALLING);
   //--------------------------------------------------
 }
 
@@ -277,7 +279,7 @@ void loop()
 
   for (unsigned int i = 0; i < 20; i++){
     // delayMicroseconds is needed for interrupts
-    delayMicroseconds(15000); // delays 15ms 20 times = 300ms
+    delayMicroseconds(15000); // delays 15us 20 times = 300us
   }
 
   
